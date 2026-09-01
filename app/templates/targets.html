@@ -1,0 +1,116 @@
+{% extends "base.html" %}
+{% set active_page = 'targets' %}
+
+{% block title %}Targets - JobScout{% endblock %}
+
+{% block content %}
+<div class="max-w-7xl mx-auto space-y-6" x-data="{ showModal: false, targetType: 'Greenhouse' }">
+    <!-- Header -->
+    <div class="flex justify-between items-center">
+        <h1 class="text-3xl font-bold text-gray-100">Scrape Targets</h1>
+        <button @click="showModal = true" class="bg-indigo-600 hover:bg-indigo-700 text-white font-medium py-2 px-4 rounded-lg shadow-lg transition-colors focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 focus:ring-offset-gray-900 flex items-center gap-2">
+            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"></path></svg>
+            Add Target
+        </button>
+    </div>
+
+    <!-- Targets Grid -->
+    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+        {% for target in targets|default([]) %}
+        <div class="bg-gray-800 rounded-xl p-5 shadow-sm border border-gray-700 flex flex-col transition-all hover:border-gray-600 relative overflow-hidden group">
+            <div class="flex justify-between items-start mb-3">
+                <h3 class="text-xl font-bold text-gray-100 truncate pr-4">{{ target.name }}</h3>
+                <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-gray-700 text-gray-300 whitespace-nowrap">
+                    {{ target.ats_type }}
+                </span>
+            </div>
+            <a href="{{ target.url }}" target="_blank" class="text-indigo-400 hover:text-indigo-300 text-sm truncate mb-4 flex items-center gap-1" title="{{ target.url }}">
+                <svg class="w-4 h-4 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14"></path></svg>
+                {{ target.url }}
+            </a>
+            
+            <div class="mt-auto pt-4 border-t border-gray-700 flex flex-col gap-3">
+                <div class="flex justify-between items-center text-sm text-gray-400">
+                    <span>Last Scraped:</span>
+                    <span>{{ target.last_scraped|default('Never') }}</span>
+                </div>
+                
+                <div class="flex justify-between items-center gap-2">
+                    <label class="flex items-center cursor-pointer">
+                        <div class="relative">
+                            <input type="checkbox" class="sr-only" {% if target.enabled %}checked{% endif %} hx-post="/api/targets/{{ target.id }}/toggle" hx-swap="none">
+                            <div class="block bg-gray-700 w-10 h-6 rounded-full transition-colors peer-checked:bg-indigo-600"></div>
+                            <div class="dot absolute left-1 top-1 bg-white w-4 h-4 rounded-full transition-transform duration-300 transform {% if target.enabled %}translate-x-4{% endif %}"></div>
+                        </div>
+                        <span class="ml-2 text-sm text-gray-300">Enabled</span>
+                    </label>
+                    
+                    <div class="flex items-center gap-2">
+                        <button hx-post="/api/scraper/run" hx-vals='{"target_id": {{ target.id }}}' class="p-2 text-indigo-400 hover:bg-indigo-500/10 rounded-lg transition-colors" title="Scrape Now">
+                            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14.752 11.168l-3.197-2.132A1 1 0 0010 9.87v4.263a1 1 0 001.555.832l3.197-2.132a1 1 0 000-1.664z"></path><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
+                        </button>
+                        <button hx-delete="/api/targets/{{ target.id }}" hx-confirm="Are you sure you want to delete {{ target.name }}?" hx-target="closest .bg-gray-800" hx-swap="outerHTML swap:0.3s" class="p-2 text-red-400 hover:bg-red-500/10 rounded-lg transition-colors" title="Delete">
+                            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path></svg>
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+        {% else %}
+        <div class="col-span-full py-12 text-center bg-gray-800 rounded-xl border border-gray-700 border-dashed">
+            <p class="text-gray-400">No targets configured yet.</p>
+            <button @click="showModal = true" class="mt-4 text-indigo-400 hover:text-indigo-300 font-medium">Add your first target</button>
+        </div>
+        {% endfor %}
+    </div>
+
+    <!-- Add Target Modal -->
+    <div x-show="showModal" class="fixed inset-0 z-50 overflow-y-auto" style="display: none;" aria-labelledby="modal-title" role="dialog" aria-modal="true">
+        <div class="flex items-end justify-center min-h-screen pt-4 px-4 pb-20 text-center sm:block sm:p-0">
+            
+            <div x-show="showModal" x-transition:enter="ease-out duration-300" x-transition:enter-start="opacity-0" x-transition:enter-end="opacity-100" x-transition:leave="ease-in duration-200" x-transition:leave-start="opacity-100" x-transition:leave-end="opacity-0" class="fixed inset-0 bg-gray-900 bg-opacity-75 transition-opacity" @click="showModal = false" aria-hidden="true"></div>
+
+            <span class="hidden sm:inline-block sm:align-middle sm:h-screen" aria-hidden="true">&#8203;</span>
+            
+            <div x-show="showModal" x-transition:enter="ease-out duration-300" x-transition:enter-start="opacity-0 translate-y-4 sm:translate-y-0 sm:scale-95" x-transition:enter-end="opacity-100 translate-y-0 sm:scale-100" x-transition:leave="ease-in duration-200" x-transition:leave-start="opacity-100 translate-y-0 sm:scale-100" x-transition:leave-end="opacity-0 translate-y-4 sm:translate-y-0 sm:scale-95" class="inline-block align-bottom bg-gray-800 rounded-xl text-left overflow-hidden shadow-xl transform transition-all sm:my-8 sm:align-middle sm:max-w-lg w-full border border-gray-700">
+                <form hx-post="/api/targets" @htmx:after-request="if($event.detail.successful) { showModal = false; setTimeout(() => window.location.reload(), 500) }">
+                    <div class="px-4 pt-5 pb-4 sm:p-6 sm:pb-4">
+                        <h3 class="text-lg leading-6 font-medium text-white mb-4" id="modal-title">Add New Scrape Target</h3>
+                        <div class="space-y-4">
+                            <div>
+                                <label class="block text-sm font-medium text-gray-400 mb-1">Company Name</label>
+                                <input type="text" name="name" required class="w-full bg-gray-700 border border-gray-600 rounded-lg px-3 py-2 text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent">
+                            </div>
+                            <div>
+                                <label class="block text-sm font-medium text-gray-400 mb-1">Career Page URL</label>
+                                <input type="url" name="url" required placeholder="https://boards.greenhouse.io/company" class="w-full bg-gray-700 border border-gray-600 rounded-lg px-3 py-2 text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent">
+                            </div>
+                            <div>
+                                <label class="block text-sm font-medium text-gray-400 mb-1">ATS Type</label>
+                                <select name="ats_type" x-model="targetType" class="w-full bg-gray-700 border border-gray-600 rounded-lg px-3 py-2 text-white focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent">
+                                    <option value="Greenhouse">Greenhouse</option>
+                                    <option value="Lever">Lever</option>
+                                    <option value="Workday">Workday</option>
+                                    <option value="Generic">Generic</option>
+                                </select>
+                            </div>
+                            <div x-show="targetType === 'Generic'" x-transition>
+                                <label class="block text-sm font-medium text-gray-400 mb-1">Custom Selectors (JSON)</label>
+                                <textarea name="custom_selectors" rows="3" placeholder='{"job_list": ".job-item", "title": "h3", "url": "a@href"}' class="w-full bg-gray-700 border border-gray-600 rounded-lg px-3 py-2 text-white placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent font-mono text-sm"></textarea>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="bg-gray-800/50 px-4 py-3 sm:px-6 sm:flex sm:flex-row-reverse border-t border-gray-700">
+                        <button type="submit" class="w-full inline-flex justify-center rounded-lg border border-transparent shadow-sm px-4 py-2 bg-indigo-600 text-base font-medium text-white hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 sm:ml-3 sm:w-auto sm:text-sm focus:ring-offset-gray-900 transition-colors">
+                            Save Target
+                        </button>
+                        <button type="button" @click="showModal = false" class="mt-3 w-full inline-flex justify-center rounded-lg border border-gray-600 shadow-sm px-4 py-2 bg-gray-700 text-base font-medium text-gray-300 hover:bg-gray-600 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 sm:mt-0 sm:ml-3 sm:w-auto sm:text-sm focus:ring-offset-gray-900 transition-colors">
+                            Cancel
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

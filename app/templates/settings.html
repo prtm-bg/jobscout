@@ -1,0 +1,175 @@
+{% extends "base.html" %}
+{% set active_page = 'settings' %}
+
+{% block title %}Settings - JobScout{% endblock %}
+
+{% block content %}
+<div class="max-w-4xl mx-auto space-y-8 pb-12">
+    <h1 class="text-3xl font-bold text-gray-100">Settings</h1>
+
+    <!-- Resume Section -->
+    <section class="bg-gray-800 rounded-xl p-6 shadow-sm border border-gray-700">
+        <h2 class="text-xl font-bold text-white mb-4 flex items-center gap-2">
+            📄 Resume / Profile
+        </h2>
+        
+        <div class="mb-8">
+            <h3 class="text-lg font-semibold text-gray-200 mb-2">Upload File</h3>
+            <p class="text-gray-400 text-sm mb-4">Upload a PDF or DOCX file. We will extract the text and analyze it.</p>
+            <form hx-post="/api/settings/resume/upload" hx-encoding="multipart/form-data" class="flex items-center gap-4">
+                <input type="file" name="file" accept=".pdf,.docx" required class="block w-full text-sm text-gray-400 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-indigo-50 file:text-indigo-700 hover:file:bg-indigo-100">
+                <button type="submit" class="bg-indigo-600 hover:bg-indigo-700 text-white font-medium py-2 px-6 rounded-lg transition-colors focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 focus:ring-offset-gray-900 whitespace-nowrap">
+                    Upload & Analyze
+                </button>
+            </form>
+        </div>
+
+        <div class="border-t border-gray-700 pt-6">
+            <h3 class="text-lg font-semibold text-gray-200 mb-2">Or Paste Text Manually</h3>
+            <p class="text-gray-400 text-sm mb-4">You can manually paste your resume text here.</p>
+            <form hx-post="/api/settings/resume">
+                <textarea name="resume_text" rows="10" placeholder="Paste your raw resume text here..." class="w-full bg-gray-700 border border-gray-600 rounded-lg px-4 py-3 text-white placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent mb-4 font-mono text-sm resize-y">{{ config.resume_text|default('') }}</textarea>
+                <div class="flex justify-end items-center">
+                    <button type="submit" class="bg-gray-700 hover:bg-gray-600 text-white font-medium py-2 px-6 rounded-lg transition-colors border border-gray-600 focus:outline-none focus:ring-2 focus:ring-gray-500 focus:ring-offset-2 focus:ring-offset-gray-900">
+                        Save Manual Text
+                    </button>
+                </div>
+            </form>
+        </div>
+    </section>
+
+    <!-- LLM Configuration Section -->
+    <section class="bg-gray-800 rounded-xl p-6 shadow-sm border border-gray-700" x-data="{ provider: '{{ config.llm_provider|default("OpenAI") }}' }">
+        <h2 class="text-xl font-bold text-white mb-4 flex items-center gap-2">
+            🧠 LLM Configuration
+        </h2>
+        <form hx-post="/api/settings/llm" class="space-y-5">
+            <div>
+                <label class="block text-sm font-medium text-gray-400 mb-2">Provider</label>
+                <div class="flex gap-4">
+                    <label class="flex items-center cursor-pointer">
+                        <input type="radio" name="llm_provider" value="OpenAI" x-model="provider" class="text-indigo-600 bg-gray-700 border-gray-600 focus:ring-indigo-500">
+                        <span class="ml-2 text-gray-300">OpenAI / Compatible</span>
+                    </label>
+                    <label class="flex items-center cursor-pointer">
+                        <input type="radio" name="llm_provider" value="Ollama" x-model="provider" class="text-indigo-600 bg-gray-700 border-gray-600 focus:ring-indigo-500">
+                        <span class="ml-2 text-gray-300">Ollama (Local)</span>
+                    </label>
+                </div>
+            </div>
+
+            <div>
+                <label class="block text-sm font-medium text-gray-400 mb-1">Model Name</label>
+                <input type="text" name="llm_model" value="{{ config.llm_model|default('gpt-4o-mini') }}" class="w-full bg-gray-700 border border-gray-600 rounded-lg px-3 py-2 text-white placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent">
+            </div>
+
+            <div x-show="provider === 'OpenAI'" x-transition class="space-y-4">
+                <div>
+                    <label class="block text-sm font-medium text-gray-400 mb-1">API Key</label>
+                    <input type="password" name="openai_api_key" value="{{ config.openai_api_key|default('') }}" placeholder="sk-..." class="w-full bg-gray-700 border border-gray-600 rounded-lg px-3 py-2 text-white placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent">
+                </div>
+                <div>
+                    <label class="block text-sm font-medium text-gray-400 mb-1">Base URL (Optional)</label>
+                    <input type="text" name="openai_base_url" value="{{ config.openai_base_url|default('') }}" placeholder="https://api.openai.com/v1" class="w-full bg-gray-700 border border-gray-600 rounded-lg px-3 py-2 text-white placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent">
+                </div>
+            </div>
+
+            <div x-show="provider === 'Ollama'" x-transition class="space-y-4">
+                <div>
+                    <label class="block text-sm font-medium text-gray-400 mb-1">Ollama URL</label>
+                    <input type="text" name="ollama_url" value="{{ config.ollama_url|default('http://localhost:11434') }}" placeholder="http://localhost:11434" class="w-full bg-gray-700 border border-gray-600 rounded-lg px-3 py-2 text-white placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent">
+                </div>
+            </div>
+
+            <div class="flex justify-end pt-2">
+                <button type="submit" class="bg-indigo-600 hover:bg-indigo-700 text-white font-medium py-2 px-6 rounded-lg transition-colors focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 focus:ring-offset-gray-900">
+                    Save LLM Config
+                </button>
+            </div>
+        </form>
+    </section>
+
+    <!-- Notifications Section -->
+    <section class="bg-gray-800 rounded-xl p-6 shadow-sm border border-gray-700" x-data="{ threshold: {{ config.match_threshold|default(70) }} }">
+        <h2 class="text-xl font-bold text-white mb-4 flex items-center gap-2">
+            🔔 Notifications
+        </h2>
+        <form hx-post="/api/settings/notifications" class="space-y-5">
+            <div>
+                <label class="block text-sm font-medium text-gray-400 mb-1">Apprise URLs (One per line)</label>
+                <textarea name="apprise_urls" rows="3" placeholder="discord://webhook_id/webhook_token&#10;slack://TokenA/TokenB/TokenC" class="w-full bg-gray-700 border border-gray-600 rounded-lg px-3 py-2 text-white placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent font-mono text-sm">{{ config.apprise_urls|default('') }}</textarea>
+                <p class="text-xs text-gray-500 mt-1">Supports Discord, Slack, Telegram, Matrix, etc. via <a href="https://github.com/caronc/apprise" target="_blank" class="text-indigo-400 hover:underline">Apprise</a>.</p>
+            </div>
+
+            <div>
+                <div class="flex justify-between items-center mb-1">
+                    <label class="block text-sm font-medium text-gray-400">Match Threshold for Notification</label>
+                    <span class="text-indigo-400 font-bold" x-text="threshold + '%'"></span>
+                </div>
+                <input type="range" name="match_threshold" min="0" max="100" x-model="threshold" class="w-full h-2 bg-gray-700 rounded-lg appearance-none cursor-pointer accent-indigo-600">
+                <p class="text-xs text-gray-500 mt-1">Only jobs with a match score above this will trigger a notification.</p>
+            </div>
+
+            <div class="flex justify-between pt-2">
+                <button type="button" hx-post="/api/settings/notifications/test" class="bg-gray-700 hover:bg-gray-600 text-gray-200 font-medium py-2 px-4 rounded-lg transition-colors border border-gray-600">
+                    Test Notification
+                </button>
+                <button type="submit" class="bg-indigo-600 hover:bg-indigo-700 text-white font-medium py-2 px-6 rounded-lg transition-colors focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 focus:ring-offset-gray-900">
+                    Save Notifications
+                </button>
+            </div>
+        </form>
+    </section>
+
+    <!-- Anti-Bot Section -->
+    <section class="bg-gray-800 rounded-xl p-6 shadow-sm border border-gray-700">
+        <h2 class="text-xl font-bold text-white mb-4 flex items-center gap-2">
+            🛡️ Anti-Bot Configuration
+        </h2>
+        <form hx-post="/api/settings/antibot" class="space-y-5">
+            <div>
+                <label class="block text-sm font-medium text-gray-400 mb-1">Proxy List (One per line)</label>
+                <textarea name="proxy_list" rows="3" placeholder="http://user:pass@1.2.3.4:8080&#10;socks5://5.6.7.8:1080" class="w-full bg-gray-700 border border-gray-600 rounded-lg px-3 py-2 text-white placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent font-mono text-sm">{{ config.proxy_list|default('') }}</textarea>
+            </div>
+
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div>
+                    <label class="block text-sm font-medium text-gray-400 mb-1">CAPTCHA Provider</label>
+                    <select name="captcha_provider" class="w-full bg-gray-700 border border-gray-600 rounded-lg px-3 py-2 text-white focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent">
+                        <option value="none" {% if config.captcha_provider == 'none' %}selected{% endif %}>None</option>
+                        <option value="flaresolverr" {% if config.captcha_provider == 'flaresolverr' %}selected{% endif %}>FlareSolverr (Open Source)</option>
+                        <option value="2captcha" {% if config.captcha_provider == '2captcha' %}selected{% endif %}>2Captcha</option>
+                        <option value="capsolver" {% if config.captcha_provider == 'capsolver' %}selected{% endif %}>CapSolver</option>
+                    </select>
+                </div>
+                <div>
+                    <label class="block text-sm font-medium text-gray-400 mb-1">CAPTCHA API Key</label>
+                    <input type="password" name="captcha_api_key" value="{{ config.captcha_api_key|default('') }}" class="w-full bg-gray-700 border border-gray-600 rounded-lg px-3 py-2 text-white placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent">
+                </div>
+            </div>
+
+            <div class="flex items-center">
+                <label class="flex items-center cursor-pointer">
+                    <div class="relative">
+                        <input type="checkbox" name="ua_rotation_enabled" class="sr-only" {% if config.ua_rotation_enabled %}checked{% endif %}>
+                        <div class="block bg-gray-700 w-10 h-6 rounded-full transition-colors toggle-bg"></div>
+                        <div class="dot absolute left-1 top-1 bg-white w-4 h-4 rounded-full transition-transform duration-300 transform toggle-dot"></div>
+                    </div>
+                    <span class="ml-3 text-sm text-gray-300 font-medium">Enable User-Agent Rotation</span>
+                </label>
+            </div>
+            
+            <style>
+                input:checked ~ .toggle-bg { background-color: #4f46e5; }
+                input:checked ~ .toggle-dot { transform: translateX(100%); }
+            </style>
+
+            <div class="flex justify-end pt-2">
+                <button type="submit" class="bg-indigo-600 hover:bg-indigo-700 text-white font-medium py-2 px-6 rounded-lg transition-colors focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 focus:ring-offset-gray-900">
+                    Save Anti-Bot Settings
+                </button>
+            </div>
+        </form>
+    </section>
+</div>
+{% endblock %}

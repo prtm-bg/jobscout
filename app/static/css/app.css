@@ -1,0 +1,59 @@
+/* Custom Scrollbar for Webkit */
+::-webkit-scrollbar {
+    width: 8px;
+    height: 8px;
+}
+
+::-webkit-scrollbar-track {
+    background: #111827; /* gray-900 */
+}
+
+::-webkit-scrollbar-thumb {
+    background: #374151; /* gray-700 */
+    border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+    background: #4b5563; /* gray-600 */
+}
+
+/* Firefox scrollbar */
+* {
+    scrollbar-width: thin;
+    scrollbar-color: #374151 #111827;
+}
+
+/* HTMX Transitions */
+.htmx-swapping {
+    opacity: 0;
+    transition: opacity 300ms ease-out;
+}
+
+.htmx-fade-in {
+    transition: opacity 300ms ease-in;
+}
+
+tr.htmx-swapping td {
+    opacity: 0;
+    transition: opacity 300ms ease-out;
+}
+
+/* Loading Indicator Styles */
+.htmx-indicator {
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 200ms ease-in;
+}
+
+.htmx-request .htmx-indicator {
+    opacity: 1;
+}
+
+.htmx-request.htmx-indicator {
+    opacity: 1;
+}
+
+/* Keep buttons from resizing when loading */
+button.relative {
+    min-height: 44px;
+}

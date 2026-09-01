@@ -1,0 +1,109 @@
+{% extends "base.html" %}
+{% set active_page = 'scheduler' %}
+
+{% block title %}Scheduler - JobScout{% endblock %}
+
+{% block content %}
+<div class="max-w-7xl mx-auto space-y-6">
+    <h1 class="text-3xl font-bold text-gray-100 mb-6">Scheduler</h1>
+
+    <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        <!-- Schedule Config -->
+        <div class="lg:col-span-1">
+            <div class="bg-gray-800 rounded-xl p-6 shadow-sm border border-gray-700 sticky top-6">
+                <h2 class="text-xl font-bold text-gray-100 mb-4">Run Frequency</h2>
+                
+                <form hx-post="/api/settings/schedule" class="space-y-6">
+                    <div>
+                        <div class="flex justify-between text-sm mb-2">
+                            <span class="text-gray-400">Current Interval:</span>
+                            <span class="text-indigo-400 font-medium">Every {{ schedule_info.interval_hours|default(6) }} hours</span>
+                        </div>
+                        <div class="flex justify-between text-sm mb-4">
+                            <span class="text-gray-400">Next Run:</span>
+                            <span class="text-gray-200">{{ schedule_info.next_run|default('Not scheduled') }}</span>
+                        </div>
+                    </div>
+
+                    <div class="space-y-3">
+                        <label class="block text-sm font-medium text-gray-300">Quick Select</label>
+                        <div class="grid grid-cols-2 gap-2" x-data="{ interval: {{ schedule_info.interval_hours|default(6) }} }">
+                            <button type="button" @click="interval = 2" :class="{'bg-indigo-600 text-white border-indigo-500': interval === 2, 'bg-gray-700 text-gray-300 border-gray-600 hover:bg-gray-600': interval !== 2}" class="px-3 py-2 rounded-lg border text-sm font-medium transition-colors">Every 2h</button>
+                            <button type="button" @click="interval = 6" :class="{'bg-indigo-600 text-white border-indigo-500': interval === 6, 'bg-gray-700 text-gray-300 border-gray-600 hover:bg-gray-600': interval !== 6}" class="px-3 py-2 rounded-lg border text-sm font-medium transition-colors">Every 6h</button>
+                            <button type="button" @click="interval = 12" :class="{'bg-indigo-600 text-white border-indigo-500': interval === 12, 'bg-gray-700 text-gray-300 border-gray-600 hover:bg-gray-600': interval !== 12}" class="px-3 py-2 rounded-lg border text-sm font-medium transition-colors">Every 12h</button>
+                            <button type="button" @click="interval = 24" :class="{'bg-indigo-600 text-white border-indigo-500': interval === 24, 'bg-gray-700 text-gray-300 border-gray-600 hover:bg-gray-600': interval !== 24}" class="px-3 py-2 rounded-lg border text-sm font-medium transition-colors">Daily</button>
+                            
+                            <!-- Hidden input to bind the alpine value to the form -->
+                            <input type="hidden" name="interval_hours" x-model="interval">
+                        </div>
+                    </div>
+                    
+                    <div>
+                        <label class="block text-sm font-medium text-gray-400 mb-1">Custom Interval (hours)</label>
+                        <input type="number" min="1" max="168" name="interval_hours_custom" placeholder="e.g. 6" value="{{ schedule_info.interval_hours|default(6) }}" class="w-full bg-gray-700 border border-gray-600 rounded-lg px-3 py-2 text-white placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent">
+                        <p class="text-xs text-gray-500 mt-1">Leave blank to use quick select.</p>
+                    </div>
+
+                    <button type="submit" class="w-full bg-indigo-600 hover:bg-indigo-700 text-white font-medium py-2 px-4 rounded-lg shadow transition-colors focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 focus:ring-offset-gray-900">
+                        Save Schedule
+                    </button>
+                </form>
+            </div>
+        </div>
+
+        <!-- Recent Runs -->
+        <div class="lg:col-span-2">
+            <div class="bg-gray-800 rounded-xl shadow-sm border border-gray-700 overflow-hidden" hx-get="/scheduler" hx-select="#runs-table" hx-trigger="every 10s" hx-swap="outerHTML">
+                <div class="px-6 py-4 border-b border-gray-700 flex justify-between items-center">
+                    <h2 class="text-xl font-bold text-gray-100">Recent Scrape Runs</h2>
+                    <span class="text-xs text-gray-500 flex items-center gap-1">
+                        <span class="relative flex h-2 w-2">
+                          <span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-indigo-400 opacity-75"></span>
+                          <span class="relative inline-flex rounded-full h-2 w-2 bg-indigo-500"></span>
+                        </span>
+                        Auto-updating
+                    </span>
+                </div>
+                <div class="overflow-x-auto" id="runs-table">
+                    <table class="w-full text-left border-collapse">
+                        <thead>
+                            <tr class="bg-gray-900/50 text-gray-400 text-sm font-medium uppercase tracking-wider">
+                                <th class="px-6 py-3">Target</th>
+                                <th class="px-6 py-3">Started</th>
+                                <th class="px-6 py-3">Duration</th>
+                                <th class="px-6 py-3">Jobs Found</th>
+                                <th class="px-6 py-3">Status</th>
+                            </tr>
+                        </thead>
+                        <tbody class="divide-y divide-gray-700">
+                            {% for run in recent_runs|default([]) %}
+                            <tr class="hover:bg-gray-750 transition-colors">
+                                <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-200">{{ run.target_name }}</td>
+                                <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-400">{{ run.started_at }}</td>
+                                <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-400">{{ run.duration }}</td>
+                                <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-300 font-medium">{{ run.jobs_found|default('-') }}</td>
+                                <td class="px-6 py-4 whitespace-nowrap text-sm">
+                                    {% if run.status == 'success' %}
+                                    <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-500/20 text-green-400">Success</span>
+                                    {% elif run.status == 'running' %}
+                                    <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-yellow-500/20 text-yellow-400">Running</span>
+                                    {% elif run.status == 'failed' %}
+                                    <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-red-500/20 text-red-400" title="{{ run.error }}">Failed</span>
+                                    {% else %}
+                                    <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-gray-500/20 text-gray-400">Pending</span>
+                                    {% endif %}
+                                </td>
+                            </tr>
+                            {% else %}
+                            <tr>
+                                <td colspan="5" class="px-6 py-8 text-center text-gray-500 text-sm">No recent scrape runs found.</td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
