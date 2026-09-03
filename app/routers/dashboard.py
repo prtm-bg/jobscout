@@ -104,20 +104,34 @@ async def scheduler_view(request: Request, db: AsyncSession = Depends(get_db)):
 
 @router.get("/settings")
 async def settings_view(request: Request, db: AsyncSession = Depends(get_db)):
+    # Load all config from DB, with fallbacks to .env
+    resume_profile_raw = await get_config(db, "resume_profile")
+    resume_profile = None
+    if resume_profile_raw:
+        try:
+            resume_profile = __import__("json").loads(resume_profile_raw)
+        except Exception:
+            pass
+
     config = {
         "resume_text": await get_config(db, "resume_text"),
+        "resume_profile": resume_profile,
+        "preferred_countries": await get_config(db, "preferred_countries"),
         "apprise_urls": await get_config(db, "apprise_urls"),
         "match_threshold": await get_config(db, "notification_threshold", "70"),
         "proxy_list": await get_config(db, "proxy_list"),
-        "captcha_provider": await get_config(db, "captcha_provider"),
+        "captcha_provider": await get_config(db, "captcha_provider", "flaresolverr"),
         "captcha_api_key": await get_config(db, "captcha_api_key"),
         "ua_rotation_enabled": await get_config(db, "ua_rotation_enabled", "True"),
         "antibot_delay": await get_config(db, "antibot_delay", "2.0"),
-        "llm_provider": settings_module.LLM_PROVIDER,
-        "llm_model": settings_module.LLM_MODEL,
-        "openai_api_key": settings_module.OPENAI_API_KEY,
-        "openai_base_url": settings_module.OPENAI_BASE_URL,
-        "ollama_url": settings_module.OLLAMA_URL,
+        # LLM — prefer DB-saved values, fallback to .env
+        "llm_provider": await get_config(db, "llm_provider") or settings_module.LLM_PROVIDER,
+        "llm_model": await get_config(db, "llm_model") or settings_module.LLM_MODEL,
+        "openai_api_key": await get_config(db, "openai_api_key") or settings_module.OPENAI_API_KEY,
+        "openai_base_url": await get_config(db, "openai_base_url") or settings_module.OPENAI_BASE_URL,
+        "gemini_api_key": await get_config(db, "gemini_api_key") or settings_module.GEMINI_API_KEY,
+        "ollama_url": await get_config(db, "ollama_url") or settings_module.OLLAMA_URL,
+        "last_discovery_at": await get_config(db, "last_discovery_at"),
     }
     
     context = {

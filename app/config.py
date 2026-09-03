@@ -11,14 +11,15 @@ class Settings(BaseSettings):
     SESSION_EXPIRY_HOURS: int = 24
     
     # LLM
-    LLM_PROVIDER: str = "openai"  # openai or ollama
+    LLM_PROVIDER: str = "gemini"  # openai, gemini, or ollama
     OPENAI_API_KEY: str = ""
     OPENAI_BASE_URL: str = "https://api.openai.com/v1"
+    GEMINI_API_KEY: str = ""
     OLLAMA_URL: str = "http://localhost:11434"
-    LLM_MODEL: str = "gpt-4o-mini"
+    LLM_MODEL: str = "gemini-2.5-flash"
     
     # CAPTCHA
-    CAPTCHA_PROVIDER: str = ""  # 2captcha, capsolver, flaresolverr, or empty
+    CAPTCHA_PROVIDER: str = "flaresolverr"  # 2captcha, capsolver, flaresolverr, or empty
     CAPTCHA_API_KEY: str = ""
     FLARESOLVERR_URL: str = "http://flaresolverr:8191/v1"
     
@@ -34,6 +35,9 @@ class Settings(BaseSettings):
     
     # Anti-bot
     UA_ROTATION_ENABLED: bool = True
+    
+    # Preferences
+    PREFERRED_COUNTRIES: str = ""  # comma-separated
     
     def get_proxy_list(self) -> list[str]:
         if not self.PROXY_LIST:
